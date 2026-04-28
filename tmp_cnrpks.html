@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Centrum Nadzoru Ruchu Online - PKS Rzeszów</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="CNR.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    #header {
+        background-color: #f0f0f0;
+        padding: 10px;
+        text-align: left;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 1000;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+    }
+    #header button {
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 5px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+    }
+    #header button:hover {
+        background-color: #e0e0e0;
+    }
+    .button-active {
+        background-color: #7cb43c !important;
+    }
+    #header button img {
+        height: 24px;
+        width: 24px;
+    }
+    #map {
+        flex-grow: 1;
+        width: 100%;
+        height: 100%;
+    }
+    #footer {
+        background-color: #f0f0f0;
+        padding: 5px;
+        text-align: left;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        z-index: 1000;
+        font-size: 13px;
+    }
+    #footerdyspo {
+        margin-right: 25px;
+    }
+    #onlineVehiclesCountFooter {
+        margin-right: 8px;
+    }
+    #BrigadeCount {
+        margin-right: 8px;
+    }
+
+    .custom-vehicle-marker {
+        position: absolute;
+    }
+
+    .combined-vehicle-inner-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .combined-vehicle-inner-container .bus-image {
+        width: 35px;
+        height: 35px;
+        display: block;
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .combined-vehicle-inner-container .arrow-image {
+        position: absolute;
+        width: 27px;
+        height: 27px;
+        bottom: 4px;
+        left: 50%;
+        transform: translate(-50%, 0%);
+    }
+
+    .vehicle-labels-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+    }
+
+    .id-speed-container {
+        display: flex;
+        gap: 0px;
+        align-items: center;
+    }
+
+    .vehicle-id-label,
+    .vehicle-speed-label,
+    .vehicle-line-label,
+    .vehicle-deviation-label,
+    .vehicle-brigade-label,
+    .vehicle-reg-label,
+    .vehicle-last-stop-label {
+        padding: 0px 0px;
+        border-radius: 0px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 14px;
+        box-sizing: border-box;
+    }
+
+    .vehicle-id-label {
+        background-color: #f0e68c;
+        color: black;
+        width: 46px;
+    }
+
+    .vehicle-speed-label {
+        background-color:rgb(43, 196, 58);
+        color: black;
+        width: 30px;
+    }
+
+    .vehicle-line-label {
+        background-color: #1e90ff;
+        color: white;
+        width: 46px;
+    }
+
+    .vehicle-deviation-label {
+        background-color: #00b050;
+        color: white;
+        width: 76px;
+    }
+
+    .deviation-darkred {
+        background-color: #c10000;
+    }
+    .deviation-red {
+        background-color: #ff0000;
+    }
+    .deviation-green {
+        background-color: #00b050;
+    }
+    .deviation-greenplus {
+        background-color: #00b050;
+        color: black;
+    }
+    .deviation-yellow {
+        background-color:rgb(230, 195, 0);
+        color: black;
+    }
+    .deviation-loop {
+        background-color: #000080;
+    }
+
+    .vehicle-brigade-label {
+        background-color: #808080;
+        color: white;
+        width: 76px;
+    }
+    
+    .vehicle-reg-label {
+        background-color: #4682B4; /* SteelBlue */
+        color: white;
+        width: 76px;
+    }
+
+    .vehicle-last-stop-label {
+        background-color: #000000;
+        color: white;
+        padding: 0px 5px;
+        width: auto;
+    }
+
+    .leaflet-attribution-flag { display: none !important; }
+
+    .divider {
+        width: 2px;
+        align-self: stretch;
+        background-color: #000000;
+        flex-shrink: 0;
+        margin-left: 3px;
+        margin-right: 3px;
+    }
+
+    #header::-webkit-scrollbar {
+    display: none;
+    }
+    #header {
+        scrollbar-width: none;
+    }
+    .stop-marker-icon {
+        background-color: #ffff00;
+        border-radius: 50%;
+        width: 10px !important;
+        height: 10px !important;
+        border: 1px solid black;
+        opacity: 1.0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .marker-selected {
+        outline: 5px solid #3eca5d;
+        box-sizing: border-box;
+    }
+
+    #maplayer {
+        width: 75px;
+        height: 100%;
+    }
+
+    #busfilterimg {
+        margin-right: 2px;
+    }
+
+    /* ... (reszta CSS dla modala) ... */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 450px;
+        min-height: 50vh;
+        max-height: 80vh;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+        border-radius: 8px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+    }
+
+    .modal-close-button {
+        color: #aaa;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .modal-close-button:hover,
+    .modal-close-button:focus {
+        color: black;
+        text-decoration: none;
+    }
+
+    .modal-tabs {
+        display: flex;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #ccc;
+    }
+    .tab-button {
+        padding: 10px 15px;
+        cursor: pointer;
+        border: none;
+        background-color: transparent;
+        font-size: 1em;
+        border-bottom: 3px solid transparent;
+        margin-right: 5px;
+        outline: none;
+    }
+    .tab-button.active {
+        border-bottom: 3px solid #7cb43c;
+        font-weight: bold;
+    }
+    .tab-content {
+        display: none; 
+        flex-grow: 1; 
+        flex-direction: column; 
+    }
+    .tab-content.active {
+        display: flex; 
+    }
+
+
+    #lineFilterControls, #modelFilterControls {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        flex-grow: 1;
+    }
+    #lineFilterControls h3, #modelFilterControls h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    #lineListContainer, #modelListContainer {
+        max-height: calc(70vh - 160px); 
+        overflow-y: auto;
+        margin-bottom: 15px;
+        padding: 10px;
+        border: 1px solid #eee;
+        flex-grow: 1;
+    }
+    #lineListContainer div, #modelListContainer div {
+        margin-bottom: 8px;
+    }
+    #lineListContainer label, #modelListContainer label {
+        margin-left: 8px;
+        cursor: pointer;
+    }
+    #lineFilterButtons, #modelFilterButtons {
+        text-align: center;
+        margin-top: auto;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+    #lineFilterButtons button, #modelFilterButtons button {
+        padding: 8px 15px;
+        margin: 0 5px;
+        cursor: pointer;
+    }
+
+    #vehicleSearchControls {
+        display: flex;
+        flex-direction: column;
+        align-items: center; 
+        padding: 10px;
+        width: 100%;
+        flex-grow: 1; 
+        justify-content: center;
+    }
+    #vehicleSearchControls h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    #vehicleIdInput {
+        padding: 10px;
+        margin-bottom: 15px;
+        width: 80%;
+        max-width: 250px; 
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1em; 
+    }
+    #searchVehicleBtn {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #7cb43c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1em; 
+    }
+    #searchVehicleBtn:hover {
+        background-color: #6ba030;
+    }
+    #vehicleSearchMessage {
+        margin-top: 15px; 
+        text-align: center;
+        color: red;
+        font-size: 0.9em;
+        min-height: 1.2em; 
+    }
+
+</style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1G4KMV103D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1G4KMV103D');
+</script></head>
+<body>
+
+<div id="header">
+    <button id="toggleInactiveBtn" title="Pokaż/ukryj nieaktywne pojazdy"><img src="img/dbus_gray.png"></button>
+    <button id="toggleBrigadeBtn" title="Pokaż/ukryj numer brygady"><img src="img/brigade_icon.png"></button>
+    <button id="toggleLineNrBtn" title="Pokaż/ukryj numer linii"><img src="img/line_icon.png"></button>
+    <button id="toggleIdBtn" title="Pokaż/ukryj ID pojazdów"><img src="img/bus.png"></button>
+    <button id="toggleRegBtn" title="Pokaż/ukryj numer rejestracyjny"><img src="img/reg_icon.png"></button>
+    <button id="toggleSpeedBtn" title="Pokaż/ukryj prędkość pojazdów"><img src="img/speed.png"></button>
+    <button id="toggleDeviationBtn" title="Pokaż/ukryj odchylenie pojazdów"><img src="img/time_icon.png"></button>
+    <button id="toggleLastStopBtn" title="Pokaż/ukryj ostatni przystanek"><img src="img/stop_icon.png"></button>
+    <button id="toggleArrowsBtn" title="Pokaż/ukryj kierunek jazdy pojazdów"><img src="img/arrow.png" style="transform: scaleY(-1);"></button>
+    <div class="divider"></div>
+    <button id="BusFilter" title="Filtruj pojazdy..."><img src="img/busfilter.png" id="busfilterimg"><span id="onlineVehiclesCount"></span></button>
+    <button id="toggleFavoritesBtn" title="Pokaż tylko ulubione"><img src="../ztm/new/img/star.png"></button>
+    <button id="ClearFilter" title="Wyczyść filtry"><img src="img/clearfilter.png"></button>
+    <div class="divider"></div>
+    <button id="centerMapBtn" title="Wycentruj mapę"><img src="img/defaultzoom.png"></button>
+    <button id="zoomInBtn" title="Powiększ mapę"><img src="img/zoom.png"></button>
+    <button id="zoomOutBtn" title="Oddal mapę"><img src="img/minus.png"></button>
+    <div class="divider"></div>
+    <button id="toggleStopsBtn" title="Pokaż/ukryj przystanki"><img src="img/busstop_icon.png"></button>
+    <button id="toggleBusesBtn" title="Pokaż/ukryj pojazdy"><img src="img/bus.png"></button>
+    Podkład: <select id="maplayer">
+        <option value="osm">OpenStreetMap</option>
+        <option value="googleRoadmap">Standardowa Google</option>
+        <option value="googleSat">Satelitarna Google</option></select>
+</div>
+
+<div id="map"></div>
+
+<div id="footer">
+    <span id="footerdyspo">Moduł dyspozytora</span>
+    Liczba pojazdów: <span id="onlineVehiclesCountFooter">?</span>
+    <span style="margin-left: 15px;">Liczba pojazdów online: <span id="activeVehiclesCount">?</span></span>
+    <span style="margin-left: 15px;">Ilość zadań w trakcie realizacji: <span id="tasksInProgressCount">?</span></span>
+</div>
+
+<div id="busFilterModal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close-button">&times;</span>
+
+        <div class="modal-tabs">
+            <button class="tab-button active" data-tab="lineFilterTabContent">Filtruj wg Linii</button>
+            <button class="tab-button" data-tab="modelFilterTabContent">Filtruj wg Modelu</button>
+            <button class="tab-button" data-tab="vehicleSearchTabContent">Wyszukaj Pojazd</button>
+        </div>
+
+        <div id="lineFilterTabContent" class="tab-content active">
+            <div id="lineFilterControls">
+                <h3>Filtruj według linii:</h3>
+                <div id="lineListContainer">
+                </div>
+                <div id="lineFilterButtons">
+                    <button id="applyLineFilterBtn">Zastosuj filtr linii</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="modelFilterTabContent" class="tab-content">
+            <div id="modelFilterControls">
+                <h3>Filtruj według modelu:</h3>
+                <div id="modelListContainer">
+                </div>
+                <div id="modelFilterButtons">
+                    <button id="applyModelFilterBtn">Zastosuj filtr modeli</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="vehicleSearchTabContent" class="tab-content">
+            <div id="vehicleSearchControls">
+                <h3>Szukaj pojazdu wg numeru taborowego lub rejestracyjnego:</h3>
+                <input type="text" id="vehicleIdInput" placeholder="Wpisz numer taborowy lub rejestracyjny">
+                <button id="searchVehicleBtn">Szukaj i zaznacz pojazd</button>
+                <p id="vehicleSearchMessage"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="CNRbyKacperWasaczPKS.js?v=4"></script>
+</body>
+</html>

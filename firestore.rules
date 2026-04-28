@@ -1,0 +1,34 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUserPreference(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             data.keys().size() <= 2 &&
+             (data.keys().hasAny(['mks_filter']) ? (data.mks_filter is string && data.mks_filter.size() <= 100) : true) &&
+             data.updatedAt == request.time;
+    }
+
+    match /users/{userId}/preferences/{docId} {
+      allow read: if isOwner(userId) && isValidId(userId) && isValidId(docId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidId(docId) &&
+                        isValidUserPreference(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidId(docId) &&
+                        isValidUserPreference(incoming()) &&
+                        (
+                          incoming().diff(existing()).affectedKeys().hasOnly(['mks_filter', 'updatedAt'])
+                        );
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(docId);
+    }
+  }
+}
