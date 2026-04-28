@@ -1,35 +1,33 @@
 # PKS Live
 
-PKS Live to aplikacja Next.js opakowana jako Android WebView przez Capacitor.
+PKS Live to lokalna aplikacja Android zbudowana na Next.js i Capacitor.
+Frontend eksportuje sie do statycznego `out/`, a APK uruchamia te pliki
+bez hostowania strony z komputera.
 
 ## Lokalny start
 
 1. Zainstaluj zaleznosci:
    `npm install`
-2. Skonfiguruj zmienne srodowiskowe potrzebne przez aplikacje webowa.
-3. Uruchom development:
+2. Uruchom development:
    `npm run dev`
 
 ## Android
 
-Androidowa powloka laduje hostowana wersje PKS Live ustawiona przez
-`PKS_LIVE_WEB_URL`.
-
 Najwazniejsze komendy:
 
-- `npm run android:sync` - synchronizacja Capacitor z projektem `android/`
+- `npm run build:android:web` - statyczny eksport frontendu do `out/`
+- `npm run android:sync` - eksport + synchronizacja z projektem `android/`
 - `npm run android:build:debug` - budowa debug APK
 - `npm run android:build:release` - budowa release AAB
 
-Jesli `PKS_LIVE_WEB_URL` nie jest ustawione, aplikacja uruchomi lokalny ekran
-informacyjny z instrukcja konfiguracji.
+Aplikacja dziala lokalnie z assetow wbudowanych w APK. Dane o pojazdach,
+przystankach i odjazdach sa pobierane z internetu bezposrednio przez aplikacje.
 
 ## GitHub Actions
 
-Workflow Androida buduje zawsze debug APK, a dodatkowo podpisany release AAB,
-jesli ustawisz sekrety:
+Workflow Androida buduje debug APK przy kazdym uruchomieniu. Podpisany release
+AAB zbuduje sie dodatkowo, jesli ustawisz sekrety:
 
-- `PKS_LIVE_WEB_URL`
 - `ANDROID_KEYSTORE_BASE64`
 - `ANDROID_KEYSTORE_PASSWORD`
 - `ANDROID_KEY_ALIAS`

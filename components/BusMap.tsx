@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, Polyline, CircleMarker, ZoomControl, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import {fetchRouteShapeClient} from '@/lib/pks-client';
 
 function MapStateTracker({ onInteraction }: { onInteraction: (active: boolean) => void }) {
   const map = useMap();
@@ -278,8 +279,8 @@ export default function BusMap({
   ), [selectedVehicle]);
   const routeStopIdsKey = useMemo(() => routeStopIds.join(','), [routeStopIds]);
 
-  const routeGlowOpts = { color: '#ffffff', weight: 12, opacity: 0.22, lineCap: 'round', lineJoin: 'round' } as L.PolylineOptions;
-  const routePolylineOpts = { color: themeColor, weight: 7, opacity: 0.92, lineCap: 'round', lineJoin: 'round' } as L.PolylineOptions;
+  const routeGlowOpts = { color: '#ffffff', weight: 12, opacity: 0.22, lineCap: 'round', lineJoin: 'round', noClip: true, smoothFactor: 0 } as L.PolylineOptions;
+  const routePolylineOpts = { color: themeColor, weight: 7, opacity: 0.92, lineCap: 'round', lineJoin: 'round', noClip: true, smoothFactor: 0 } as L.PolylineOptions;
 
   useEffect(() => {
     if (!selectedVehicle || !stopsData) {
@@ -290,51 +291,28 @@ export default function BusMap({
       return;
     }
 
-    const pathStopIds = routeStopIds;
     const routeKey = `${selectedVehicle.id}_${routeStopIdsKey}`;
     if (lastFetchedRouteKeyRef.current === routeKey && snappedRoute.length > 0) {
       // Already fetched and route hasn't changed
       return;
     }
 
-    const routeCoords: [number, number][] = [];
-    for (const stopId of pathStopIds) {
-      const stop = stopsData[String(stopId)];
-      if (stop) {
-        routeCoords.push([stop.lat, stop.lon]);
-      }
-    }
-
     lastFetchedRouteKeyRef.current = routeKey;
 
     const tripId = String(selectedVehicle.tripId || '').trim();
-    if (!tripId) {
-      setTimeout(() => setSnappedRoute(routeCoords), 0);
-      return;
-    }
-
     const controller = new AbortController();
-
-    fetch(`/api/route-shape?tripId=${encodeURIComponent(tripId)}`, {
-      signal: controller.signal,
-      cache: 'force-cache',
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Shape request failed: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
+    fetchRouteShapeClient(tripId, routeStopIds, stopsData)
+      .then((points) => {
         if (lastFetchedRouteKeyRef.current !== routeKey) return;
-        const points = Array.isArray(data?.points) ? data.points : [];
         if (points.length > 1) {
           setSnappedRoute(points);
           return;
         }
-        setSnappedRoute(routeCoords);
+        setSnappedRoute([]);
       })
       .catch(() => {
         if (controller.signal.aborted || lastFetchedRouteKeyRef.current !== routeKey) return;
-        setSnappedRoute(routeCoords);
+        setSnappedRoute([]);
       });
 
     return () => controller.abort();
@@ -417,8 +395,8 @@ export default function BusMap({
         {/* Draw Route Line */}
         {snappedRoute.length > 0 && (
           <>
-            <Polyline positions={snappedRoute} pathOptions={routeGlowOpts} />
-            <Polyline positions={snappedRoute} pathOptions={routePolylineOpts} />
+            <Polyline key={`route-glow-${selectedVehicleId}-${routeStopIdsKey}`} positions={snappedRoute} pathOptions={routeGlowOpts} />
+            <Polyline key={`route-line-${selectedVehicleId}-${routeStopIdsKey}`} positions={snappedRoute} pathOptions={routePolylineOpts} />
           </>
         )}
 

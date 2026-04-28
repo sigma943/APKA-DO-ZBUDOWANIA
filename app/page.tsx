@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Bus, Search, RefreshCw, AlertCircle, X, Clock, Navigation, MapPin, List, Map as MapIcon, Settings, ChevronRight, Eye, Palette, ArrowLeft, Star, Monitor, Sun, Moon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Vehicle } from '@/components/BusMap';
+import {fetchDeparturesClient, fetchStopsClient, fetchVehiclesClient} from '@/lib/pks-client';
 
 const BusMap = dynamic(() => import('@/components/BusMap'), {
   ssr: false,
@@ -208,12 +209,7 @@ export default function Home() {
          setDeparturesLineFilter('');
       }, 0);
       const stopInfo = stopsList.find(s => s.id === selectedStopId);
-      const areaParam = stopInfo && stopInfo.areaId ? `&areaId=${stopInfo.areaId}&code=${stopInfo.code || ''}` : '';
-      fetch(`/api/departures?stopId=${selectedStopId}${areaParam}`)
-        .then(res => {
-          if (!res.ok) throw new Error('Błąd odjazdów');
-          return res.json();
-        })
+      fetchDeparturesClient(selectedStopId, stopInfo?.areaId, stopInfo?.code || '')
         .then(data => {
             if (data && data.journeys) {
                setStopDepartures(data.journeys);
@@ -287,29 +283,11 @@ export default function Home() {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
-      const headers: HeadersInit = {};
-      if (!force && lastVehiclesEtagRef.current) {
-        headers['If-None-Match'] = lastVehiclesEtagRef.current;
-      }
-      const res = await fetch(`/api/vehicles?inactive=${inactive}${force ? '&force=true&t=' + Date.now() : ''}`, {
-        signal: controller.signal,
-        cache: 'no-store',
-        headers,
-      });
+      const data = await Promise.race([
+        fetchVehiclesClient(inactive),
+        new Promise((_, reject) => controller.signal.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), {name: 'AbortError'}))))
+      ]) as any;
       clearTimeout(timeoutId);
-      if (res.status === 304) {
-        setError(null);
-        return;
-      }
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Błąd serwera');
-      }
-      const nextEtag = res.headers.get('etag');
-      if (nextEtag) {
-        lastVehiclesEtagRef.current = nextEtag;
-      }
-      const data = await res.json();
       const newDataStr = JSON.stringify(data);
       if (newDataStr !== lastVehiclesRef.current) {
         setVehicles(Array.isArray(data) ? data : (data.vehicles || []));
@@ -366,13 +344,8 @@ export default function Home() {
   }, [refreshInterval, showInactive]);
 
   useEffect(() => {
-    fetch('/api/stops')
-      .then(r => {
-        if (!r.ok) throw new Error('Nie udało się pobrać przystanków');
-        return r.json();
-      })
+    fetchStopsClient()
       .then(d => {
-        if (d.error) throw new Error(d.error);
         setStopsList(Object.entries(d).map(([id, val]: any) => ({ 
            id, 
            name: val.n, 
