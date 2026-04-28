@@ -38,6 +38,9 @@ jobs:
       - name: Prepare Android web shell
         run: npm run android:sync
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
 
