@@ -7,10 +7,19 @@
     "build": "npx cross-env NODE_ENV=production next build",
     "start": "next start",
     "lint": "eslint .",
-    "clean": "next clean",
-    "update:route-shapes": "node scripts/update-route-shapes.mjs"
+    "update:route-shapes": "node scripts/update-route-shapes.mjs",
+    "android:sync": "npx cap sync android",
+    "android:copy": "npx cap copy android",
+    "android:open": "npx cap open android",
+    "android:assets": "npx capacitor-assets generate --android",
+    "android:build:debug": "cd android && gradlew.bat assembleDebug",
+    "android:build:release": "cd android && gradlew.bat bundleRelease"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.1",
     "autoprefixer": "^10.4.21",

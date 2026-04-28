@@ -1,9 +1,9 @@
 import type {Metadata} from 'next';
-import './globals.css'; // Global styles
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'PKS Live',
-  description: 'PKS Live - śledzenie autobusów na żywo.',
+  description: 'PKS Live - sledzenie autobusow na zywo.',
   applicationName: 'PKS Live',
   icons: {
     icon: '/icon.png',

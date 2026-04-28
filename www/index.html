@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PKS Live</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07131a;
+        --card: rgba(14, 36, 46, 0.92);
+        --accent: #00a3a2;
+        --text: #eef7f7;
+        --muted: #9dc0c3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(0, 163, 162, 0.32), transparent 40%),
+          linear-gradient(180deg, #0b1d25 0%, var(--bg) 100%);
+      }
+
+      main {
+        width: min(100%, 420px);
+        padding: 28px;
+        border-radius: 28px;
+        background: var(--card);
+        border: 1px solid rgba(157, 192, 195, 0.15);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 2rem;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      code {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PKS Live</h1>
+      <p>
+        Aplikacja Android wymaga ustawienia adresu hostowanej wersji webowej w
+        zmiennej <code>PKS_LIVE_WEB_URL</code> podczas synchronizacji Capacitor
+        lub w GitHub Actions.
+      </p>
+      <p>
+        Po ustawieniu adresu uruchom <code>npm run android:sync</code> i zbuduj
+        projekt ponownie.
+      </p>
+    </main>
+  </body>
+</html>

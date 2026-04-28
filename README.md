@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# PKS Live
 
-# Run and deploy your AI Studio app
+PKS Live to aplikacja Next.js opakowana jako Android WebView przez Capacitor.
 
-This contains everything you need to run your app locally.
+## Lokalny start
 
-View your app in AI Studio: https://ai.studio/apps/a865c64a-d729-4bc6-9db0-b4ba0cbc526d
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
+1. Zainstaluj zaleznosci:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Skonfiguruj zmienne srodowiskowe potrzebne przez aplikacje webowa.
+3. Uruchom development:
    `npm run dev`
+
+## Android
+
+Androidowa powloka laduje hostowana wersje PKS Live ustawiona przez
+`PKS_LIVE_WEB_URL`.
+
+Najwazniejsze komendy:
+
+- `npm run android:sync` - synchronizacja Capacitor z projektem `android/`
+- `npm run android:build:debug` - budowa debug APK
+- `npm run android:build:release` - budowa release AAB
+
+Jesli `PKS_LIVE_WEB_URL` nie jest ustawione, aplikacja uruchomi lokalny ekran
+informacyjny z instrukcja konfiguracji.
+
+## GitHub Actions
+
+Workflow Androida buduje zawsze debug APK, a dodatkowo podpisany release AAB,
+jesli ustawisz sekrety:
+
+- `PKS_LIVE_WEB_URL`
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
